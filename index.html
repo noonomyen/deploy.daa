@@ -1,0 +1,340 @@
+<!-- I write JavaScript myself -->
+<!-- std.66122420120 -->
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Seat Booking Simulator</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        font-family: Verdana, sans-serif;
+        box-sizing: border-box;
+        font-size: 20px;
+    }
+
+    h1 {
+        font-size: 30px;
+        margin-top: 20px;
+    }
+
+    button {
+        width: 100px;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    table {
+        border-collapse: collapse;
+        margin-top: 20px;
+        width: 40%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    table th, table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: normal;
+    }
+
+    table th {
+        background-color: #f2f2f2;
+    }
+
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 10px;
+    }
+
+    .grid-container > div {
+        user-select: none;
+        cursor: pointer;
+        text-align: center;
+        background-color: #1aa3e8;
+        width: 70px;
+        height: 70px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .grid-container > div:hover {
+        background-color: #1a70e8;
+    }
+
+    .selected {
+        background-color: #64686c !important;
+    }
+
+    .panel {
+        margin: 10px 0px;
+        text-align: left;
+    }
+
+    .panel > * {
+        margin: 10px 0px;
+    }
+</style>
+<body>
+    <h1>Bus Seat Booking Simulator</h1>
+    <div class="panel">
+        <div>
+            <span>From: </span>
+            <select id="from" class="select-provinces select-province-first"></select>
+            <span>To: </span>
+            <select id="to" class="select-provinces select-province-last"></select>
+        </div>
+        <div>
+            <span>Current province: </span>
+            <span id="current-province">...</span>
+            <button id="next-province">Next</button>
+            <button id="reset-simulate">Reset</button>
+        </div>
+    </div>
+    <div class="grid-container" id="seat"></div>
+    <table id="booking-list">
+        <tr>
+            <th>Seat</th>
+            <th>From</th>
+            <th>To</th>
+        </tr>
+    </table>
+</body>
+<script>
+    class Booking {
+        constructor(element, number) {
+            this.element = element;
+            this.number = number;
+            this.booking = [];
+        }
+
+        arrive(n) {
+            let out = null;
+            this.booking = this.booking.filter((book) => {
+                if (book[1] == n) {
+                    out = book;
+                    return false;
+                } else {
+                    return true;
+                }
+            });
+
+            return out;
+        }
+
+        is_empty(from, to) {
+            if (from == to || from < 0 || to >= this.number || to < from) return false;
+            for (let i = 0; i < this.booking.length; i++) {
+                if (to <= this.booking[i][0]) continue;
+                else if (from >= this.booking[i][1]) continue;
+                else return false;
+            }
+            return true;
+        }
+
+        reset() {
+            this.booking = [];
+        }
+
+        seat(from, to) {
+            this.booking.push([from, to]);
+        }
+    }
+
+    class Simulate {
+        provinces = [
+            "Ubon Ratchathani",
+            "Sisaket",
+            "Surin",
+            "Buriram",
+            "Nakhon Ratchasima",
+            "Saraburi",
+            "Ayutthaya",
+            "Pathum Thani",
+            "Bangkok"
+        ];
+
+        provinceTotal = this.provinces.length;
+        seatTotal;
+        current;
+        booking;
+        outBooking;
+
+        select_class = document.getElementsByClassName("select-provinces");
+        select_from = document.getElementsByClassName("select-province-first").item(0);
+        select_to = document.getElementsByClassName("select-province-last").item(0);
+        current_province = document.getElementById("current-province");
+        next_province = document.getElementById("next-province");
+        reset_simulate = document.getElementById("reset-simulate");
+        booking_table = document.getElementById("booking-list");
+        booking_element = document.getElementsByClassName("booking");
+
+        constructor(n) {
+            this.seatTotal = n;
+            this.booking = [];
+            for (let i = 0; i < this.seatTotal; i++) this.booking.push(null);
+            this._reset();
+        }
+
+        next() {
+            if (this.current == this.provinceTotal - 1) {
+                let message = "Can't go on. This is the final station.";
+                console.log(message);
+                alert(message);
+            } else {
+                let message = `Are you sure you want to go to the next station, current ${this.provinces[this.current]}, next ${this.provinces[this.current + 1]}?`;
+                console.log(message);
+                if (confirm(message)) {
+                    this.current += 1;
+                    this.current_province.innerText = this.provinces[this.current];
+                    let message = `Arrived at station ${this.provinces[this.current]}.`;
+                    console.log(message);
+                    alert(message);
+
+                    this.booking.forEach((book, index) => {
+                        let out = book.arrive(this.current);
+                        if (out != null) {
+                            let message = `Seat ${index + 1} from ${this.provinces[out[0]]} has reached its intended destination.`;
+                            console.log(message);
+                        }
+                    });
+
+                    this.seatDisplayUpdate();
+                }
+            }
+        }
+
+        _reset() {
+            this.current = 0;
+            this.current_province.innerText = this.provinces[this.current];
+            this.select_from.value = "0";
+            this.select_to.value = (this.provinceTotal - 1).toString();
+        }
+
+        reset() {
+            let message = "Are you sure you want to reset the simulation?";
+            console.log(message);
+            if (confirm(message)) {
+                this.booking.forEach(book => book.reset());
+                this._reset();
+                this.seatDisplayUpdate();
+                message = "Reset successful";
+                console.log(message);
+                alert(message);
+            }
+        }
+
+        selecting() {
+            return [
+                Number(this.select_from.value),
+                Number(this.select_to.value)
+            ];
+        }
+
+        seat(n) {
+            if (n < this.seatTotal && n >= 0 ) {
+                let [from, to] = this.selecting();
+                if (from >= to) {
+                    let message = "The origin and destination provinces are incorrect.";
+                    console.log(message);
+                    alert(message);
+                }
+                else if (this.booking[n].is_empty(from, to)) {
+                    if (from >= this.current) {
+                        let message = `Are you sure you want to book seat ${n + 1} for from ${this.provinces[from]} to ${this.provinces[to]}`;
+                        console.log(message);
+                        if (confirm(message)) {
+                            this.booking[n].seat(from, to);
+                            message = `Reservation successful, seat ${n + 1}`;
+                            console.log(message);
+                            alert(message);
+                        }
+                    } else {
+                        let message = "You cannot reserve a seat from this province because the bus has already passed through this province."
+                        console.log(message);
+                        alert(message);
+                    }
+                } else {
+                    let message = `Reservation failed. Someone has already reserved the seat, seat ${n + 1}`;
+                    console.log(message)
+                    alert(message);
+                }
+            } else {
+                console.log("An error occurred. The number of seats exceeds the number available in the system.")
+            }
+
+            this.seatDisplayUpdate();
+        }
+
+        seatDisplayUpdate() {
+            const [from, to] = this.selecting();
+
+            this.booking.forEach((book) => {
+                if (book.is_empty(from, to)) book.element.classList.remove("selected");
+                else book.element.classList.add("selected")
+            });
+
+            while (this.booking_element[0]) {
+                this.booking_element[0].parentNode.removeChild(this.booking_element[0]);
+            }
+
+            this.booking.forEach((seat, index) => {
+                seat.booking.forEach(book => {
+                    const element = document.createElement("tr");
+                    element.classList.add("booking");
+                    for (let i = 0; i < 3; i++) element.appendChild(document.createElement("td"));
+                    element.childNodes[0].innerText = (index + 1).toString();
+                    element.childNodes[1].innerText = this.provinces[book[0]];
+                    element.childNodes[2].innerText = this.provinces[book[1]];
+                    this.booking_table.appendChild(element);
+                });
+            });
+        }
+
+        init() {
+            const seatContainer = document.getElementById("seat");
+            for (let i = 0; i < this.seatTotal; i++) {
+                let element = document.createElement("div");
+                element.innerText = (i + 1).toString();
+                element.onclick = () => this.seat(i);
+                seatContainer.appendChild(element);
+                this.booking[i] = new Booking(element, this.seatTotal);
+            }
+
+            for (let i = 0; i < this.select_class.length; i++) {
+                let element = this.select_class.item(i);
+                this.provinces.forEach((province, index) => {
+                    let option = document.createElement("option");
+                    option.value = index.toString();
+                    option.innerText = province;
+                    element.appendChild(option);
+                });
+            }
+
+            this.select_from.value = "0";
+            this.select_to.value = (this.provinceTotal - 1).toString();
+
+            this.select_from.onchange = this.seatDisplayUpdate.bind(this);
+            this.select_to.onchange = this.seatDisplayUpdate.bind(this);
+
+            this.next_province.onclick = this.next.bind(this);
+            this.reset_simulate.onclick = this.reset.bind(this);
+        }
+    }
+
+    const simulate = new Simulate(32);
+    simulate.init();
+</script>
+</html>
