@@ -1,0 +1,301 @@
+<!-- std.66122420120 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Light Simulator</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #eaeaea;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        text-align: center;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .traffic-lights {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 20px;
+    }
+
+    .traffic-light {
+        background-color: #000;
+        border-radius: 10px;
+        width: 100px;
+        height: 350px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+
+    .red-light, .yellow-light, .green-light {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
+        margin: 5px 0;
+    }
+
+    .red-light {
+        background-color: red;
+    }
+
+    .yellow-light {
+        background-color: yellow;
+    }
+
+    .green-light {
+        background-color: green;
+        margin-bottom: 50px;
+    }
+
+    .countdown {
+        width: 80px;
+        height: 40px;
+        background-color: #333;
+        color: white;
+        font-size: 1.5em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 5px;
+        position: absolute;
+        bottom: 10px;
+    }
+
+    .controls {
+        margin-top: 20px;
+    }
+
+    .controls button {
+        margin: 5px;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .controls button:hover {
+        background-color: #0056b3;
+    }
+
+    .edit-controls {
+        margin-top: 20px;
+        text-align: left;
+    }
+
+    .edit-controls h2 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .timer {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+    .timer label {
+        flex: 1;
+    }
+
+    .timer input {
+        flex: 1;
+        padding: 5px;
+        width: 60px;
+        margin-left: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+</style>
+<body>
+    <div class="container">
+        <h1>Traffic Light Simulator</h1>
+
+        <div class="traffic-lights">
+            <div class="traffic-light" id="light1">
+                <div class="red-light"></div>
+                <div class="yellow-light"></div>
+                <div class="green-light"></div>
+                <div class="countdown">0</div>
+            </div>
+            <div class="traffic-light" id="light2">
+                <div class="red-light"></div>
+                <div class="yellow-light"></div>
+                <div class="green-light"></div>
+                <div class="countdown">0</div>
+            </div>
+            <div class="traffic-light" id="light3">
+                <div class="red-light"></div>
+                <div class="yellow-light"></div>
+                <div class="green-light"></div>
+                <div class="countdown">0</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="startTraffic(1)">Start 1</button>
+            <button onclick="startTraffic(2)">Start 2</button>
+            <button onclick="startTraffic(3)">Start 3</button>
+            <button onclick="stopTraffic()">Stop</button>
+            <button onclick="resetTraffic()">Reset</button>
+
+            <div class="edit-controls">
+                <h2>Edit Timers</h2>
+                <div class="timer">
+                    <label>Green Time:</label>
+                    <input type="number" id="green1" value="18">
+                    <input type="number" id="green2" value="18">
+                    <input type="number" id="green3" value="18">
+                </div>
+                <div class="timer">
+                    <label>Blink Time:</label>
+                    <input type="number" id="blink1" value="3">
+                    <input type="number" id="blink2" value="3">
+                    <input type="number" id="blink3" value="3">
+                </div>
+                <div class="timer">
+                    <label>Yellow Time:</label>
+                    <input type="number" id="yellow1" value="3">
+                    <input type="number" id="yellow2" value="3">
+                    <input type="number" id="yellow3" value="3">
+                </div>
+                <div class="timer">
+                    <label>Delay Time:</label>
+                    <input type="number" id="delay1" value="2">
+                    <input type="number" id="delay2" value="2">
+                    <input type="number" id="delay3" value="2">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let timers = [];
+        let currentLight = -1;
+        let isPaused = true;
+        let interval;
+
+        function startTraffic(light) {
+            if (isPaused) {
+                isPaused = false;
+                currentLight = light - 1;
+                updateOtherLightsRed();
+                initializeTimers();
+                updateTrafficLight();
+                interval = setInterval(updateTrafficLight, 1000);
+            }
+        }
+
+        function stopTraffic() {
+            isPaused = true;
+            clearInterval(interval);
+        }
+
+        function resetTraffic() {
+            stopTraffic();
+            currentLight = -1;
+            document.querySelectorAll(".countdown").forEach((el, index) => el.textContent = document.getElementById(`green${index + 1}`).value);
+            document.querySelectorAll(".red-light, .yellow-light, .green-light").forEach((el) => el.style.opacity = "0.3");
+        }
+
+        function initializeTimers() {
+            timers = [
+                {
+                    greenTime: parseInt(document.getElementById('green1').value),
+                    blinkTime: parseInt(document.getElementById('blink1').value),
+                    yellowTime: parseInt(document.getElementById('yellow1').value),
+                    delayTime: parseInt(document.getElementById('delay1').value),
+                    countdown: parseInt(document.getElementById('green1').value)
+                },
+                {
+                    greenTime: parseInt(document.getElementById('green2').value),
+                    blinkTime: parseInt(document.getElementById('blink2').value),
+                    yellowTime: parseInt(document.getElementById('yellow2').value),
+                    delayTime: parseInt(document.getElementById('delay2').value),
+                    countdown: parseInt(document.getElementById('green2').value)
+                },
+                {
+                    greenTime: parseInt(document.getElementById('green3').value),
+                    blinkTime: parseInt(document.getElementById('blink3').value),
+                    yellowTime: parseInt(document.getElementById('yellow3').value),
+                    delayTime: parseInt(document.getElementById('delay3').value),
+                    countdown: parseInt(document.getElementById('green3').value)
+                }
+            ];
+        }
+
+        function updateTrafficLight() {
+            if (isPaused) return;
+
+            const currentTimer = timers[currentLight];
+            const lightElement = document.getElementById(`light${currentLight + 1}`);
+
+            if (currentTimer.countdown > 0) {
+                lightElement.querySelector('.green-light').style.opacity = currentTimer.countdown <= currentTimer.blinkTime ? (currentTimer.countdown % 2 === 0 ? '1' : '0.3') : '1';
+                lightElement.querySelector('.yellow-light').style.opacity = '0.3';
+                lightElement.querySelector('.red-light').style.opacity = '0.3';
+            } else if (currentTimer.countdown > -currentTimer.yellowTime) {
+                lightElement.querySelector('.green-light').style.opacity = '0.3';
+                lightElement.querySelector('.yellow-light').style.opacity = '1';
+                lightElement.querySelector('.red-light').style.opacity = '0.3';
+            } else if (currentTimer.countdown > -(currentTimer.yellowTime + currentTimer.delayTime)) {
+                lightElement.querySelector('.green-light').style.opacity = '0.3';
+                lightElement.querySelector('.yellow-light').style.opacity = '0.3';
+                lightElement.querySelector('.red-light').style.opacity = '1';
+            } else {
+                currentLight = (currentLight + 1) % 3;
+                timers[currentLight].countdown = timers[currentLight].greenTime;
+                updateOtherLightsRed();
+            }
+
+            lightElement.querySelector('.countdown').textContent = Math.max(0, currentTimer.countdown);
+            currentTimer.countdown--;
+        }
+
+        function updateOtherLightsRed() {
+            document.querySelectorAll(".traffic-light").forEach((light, index) => {
+                if (index !== currentLight) {
+                    light.querySelector('.green-light').style.opacity = '0.3';
+                    light.querySelector('.yellow-light').style.opacity = '0.3';
+                    light.querySelector('.red-light').style.opacity = '1';
+                    light.querySelector('.countdown').textContent = '0';
+                }
+            });
+        }
+
+        document.querySelectorAll(".countdown").forEach((el, index) => el.textContent = document.getElementById(`green${index + 1}`).value);
+    </script>
+</body>
+</html>
